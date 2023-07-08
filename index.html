@@ -7,27 +7,136 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
   <style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    #container {
+        display: flex;
+        height: 100vh;
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    #side-panel {
+        flex-basis: 500px;
+        overflow-y: scroll;
+    }
+
+    #map {
+        flex-grow: 1;
+    }
+
+    button {
+        margin-bottom: 10px;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        border: 1px solid #ddd;
+    }
+
+    th, td {
+        text-align: left;
+        padding: 16px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
   </style>
  </head>
  <body>
   <main id="container">
     <div id="side-panel">
-
-      <h2>Earthquake List</h2>
-      <button>Sort by Magnitude</button>
-
+      <h2>Food Security List</h2>
+      <button>Sort by </button>
       <table>
         <tr>
           <th>id</th>
-            <th>magnitude</th>
+            <th>food security</th>
             <th>timestamp</th>
         </tr>
       </table>
-
     </div>
     <div id="map"></div>
   </main>
   <script>
+    // Define the Mapbox access token
+    mapboxgl.accessToken =
+        'pk.eyJ1IjoiY2lsbGFuZ3UiLCJhIjoiY2xqdDMzODdhMGNxaDNocnlhYTA3ZHZjOSJ9.G_q6HHyBozfGqC-G221j2g';
+    // Create the map object
+    let map = new mapboxgl.Map({
+        container: 'map', // container ID
+        style: 'mapbox://styles/mapbox/dark-v11', // style URL
+        zoom: 5.5, // starting zoom
+        center: [138, 38] // starting center
+    });
+
+
+    async function geojsonFetch() {
+
+        let response, food, westcentralafrica, table;
+        response = await fetch('assets/foodsecurity.geojson');
+        food = await response.json();
+        response = await fetch('assets/westcentralafrica.json');
+        westcentralafrica = await response.json();
+
+        table = document.getElementsByTagName("table")[0];
+        let row, cell1, cell2, cell3;
+        for (let i = 0; i < food.features.length; i++) {
+            // Create an empty <tr> element and add it to the 1st position of the table:
+            row = table.insertRow(-1);
+            cell1 = row.insertCell(0);
+            cell2 = row.insertCell(1);
+            cell3 = row.insertCell(2);
+            cell1.innerHTML = food.features[i].properties.id;
+            cell2.innerHTML = food.features[i].properties.mag;
+            cell3.innerHTML = new Date(food.features[i].properties.time).toLocaleDateString(
+                "en-US");
+        }
+
+
+        //load data to the map as new layers and table on the side.
+        map.on('load', function loadingData() {
+
+            map.addSource('food', {
+                type: 'geojson',
+                data: foodsecurity
+            });
+
+            map.addLayer({
+                'id': 'food-layer',
+                'type': 'circle',
+                'source': 'food',
+                'paint': {
+                    'circle-radius': 8,
+                    'circle-stroke-width': 2,
+                    'circle-color': 'red',
+                    'circle-stroke-color': 'white'
+                }
+            });
+
+
+            map.addSource('westcentralafrica', {
+                type: 'geojson',
+                data: westcentralafrica
+            });
+
+            map.addLayer({
+                'id': 'westcentralafrica-layer',
+                'type': 'fill',
+                'source': 'westcentralafrica',
+                'paint': {
+                    'fill-color': '#0080ff', // blue color fill
+                    'fill-opacity': 0.5
+                }
+            });
+
+        });
+    }
   </script>
-</body>
+ </body>
 <html>
